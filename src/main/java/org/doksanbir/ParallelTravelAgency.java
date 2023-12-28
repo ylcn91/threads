@@ -32,7 +32,7 @@ public class ParallelTravelAgency {
     /**
      * The base price per day for travel.
      */
-    private static final double BASE_RATE = 100.0;
+    static final double BASE_RATE = 100.0;
 
     /**
      * An array containing names of all travel destinations.
@@ -42,7 +42,7 @@ public class ParallelTravelAgency {
     /**
      * An array of possible weather conditions for destinations.
      */
-    private static final String[] WEATHER_CONDITIONS = {"Sunny", "Cloudy", "Rainy", "Stormy", "Snowy", "Windy", "Foggy", "Icy"};
+    static final String[] WEATHER_CONDITIONS = {"Sunny", "Cloudy", "Rainy", "Stormy", "Snowy", "Windy", "Foggy", "Icy"};
 
     /**
      * A static Random object used for generating random numbers throughout the code.
@@ -69,7 +69,7 @@ public class ParallelTravelAgency {
     /**
      * Uses a ForkJoinPool to submit a parallel task that iterates over and processes each destination individually.
      */
-    private static void processDestinationsInParallel() {
+    static void processDestinationsInParallel() {
         ForkJoinPool forkJoinPool = new ForkJoinPool();
         try {
             forkJoinPool.submit(() ->
@@ -101,7 +101,7 @@ public class ParallelTravelAgency {
      * @param people      The number of people traveling.
      * @return The calculated quotation for the trip.
      */
-    private static double calculateQuotation(String destination, int days, int people) {
+    static double calculateQuotation(String destination, int days, int people) {
         double rateMultiplier = getDestinationRateMultiplier(destination);
         return BASE_RATE * rateMultiplier * days * people;
     }
@@ -116,7 +116,7 @@ public class ParallelTravelAgency {
      * multiplier based on the destination name. This is not a secure or robust method for generating random numbers
      * and should be replaced with a proper cryptographic random number generator for production use.
      */
-    private static double getDestinationRateMultiplier(String destination) {
+    static double getDestinationRateMultiplier(String destination) {
         return fib(Math.abs(destination.hashCode()) % 30);
     }
 
@@ -126,7 +126,7 @@ public class ParallelTravelAgency {
      * @param n The index of the Fibonacci number to calculate.
      * @return The nth Fibonacci number.
      */
-    private static double fib(int n) {
+    static double fib(int n) {
         if (n <= 1) return n;
         return fib(n - 1) + fib(n - 2);
     }
@@ -141,7 +141,7 @@ public class ParallelTravelAgency {
      * destination's hashCode. This is not a realistic representation of an actual weather service and should be replaced
      * with proper network calls and parsing logic for production use.
      */
-    private static String getWeatherForecast(String destination) {
+    static String getWeatherForecast(String destination) {
         simulateNetworkCall();
         Random destinationSpecificRandom = new Random(destination.hashCode());
         return WEATHER_CONDITIONS[destinationSpecificRandom.nextInt(WEATHER_CONDITIONS.length)];
@@ -151,7 +151,7 @@ public class ParallelTravelAgency {
      * Simulates a network call by introducing a 200 ms delay.
      * This method should be replaced with actual network calls and error handling logic for production use.
      */
-    private static void simulateNetworkCall() {
+    static void simulateNetworkCall() {
         try {
             Thread.sleep(200);
         } catch (InterruptedException e) {
