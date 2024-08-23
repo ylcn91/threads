@@ -17,7 +17,7 @@ import java.util.stream.IntStream;
 @Slf4j
 public class VirtualThreadExample {
 
-    private static final int THREAD_COUNT = 1_000_000;
+    private static final int THREAD_COUNT = 10_000;
     private static final Duration TASK_DURATION = Duration.ofMillis(10);
 
     public static void main(String[] args) throws InterruptedException {
@@ -99,15 +99,7 @@ public class VirtualThreadExample {
         // Platform Threads
         Instant platformBegin = Instant.now();
         try (var executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())) {
-            List<Future<?>> futures = IntStream.range(0, THREAD_COUNT)
-                    .mapToObj(i -> executor.submit(VirtualThreadExample::simulateWork))
-                    .collect(Collectors.toList());
-
-            for (Future<?> future : futures) {
-                future.get();
-            }
-        } catch (ExecutionException e) {
-            log.error("Error during platform thread execution: {}", e.getMessage());
+            executeTasksWithExecutor(executor);
         }
         Instant platformEnd = Instant.now();
         Duration platformDuration = Duration.between(platformBegin, platformEnd);
@@ -115,15 +107,7 @@ public class VirtualThreadExample {
         // Virtual Threads
         Instant virtualBegin = Instant.now();
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            List<Future<?>> futures = IntStream.range(0, THREAD_COUNT)
-                    .mapToObj(i -> executor.submit(VirtualThreadExample::simulateWork))
-                    .collect(Collectors.toList());
-
-            for (Future<?> future : futures) {
-                future.get();
-            }
-        } catch (ExecutionException e) {
-            log.error("Error during virtual thread execution: {}", e.getMessage());
+            executeTasksWithExecutor(executor);
         }
         Instant virtualEnd = Instant.now();
         Duration virtualDuration = Duration.between(virtualBegin, virtualEnd);
@@ -131,6 +115,20 @@ public class VirtualThreadExample {
         log.info("Platform Threads Duration: {}", platformDuration);
         log.info("Virtual Threads Duration: {}", virtualDuration);
         log.info("Virtual Threads were {} times faster", platformDuration.toMillis() / (double) virtualDuration.toMillis());
+    }
+
+    private static void executeTasksWithExecutor(ExecutorService executor) throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
+        for (int i = 0; i < THREAD_COUNT; i++) {
+            executor.submit(() -> {
+                try {
+                    simulateWork();
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+        latch.await();
     }
 
     private static String readPoolName() {
