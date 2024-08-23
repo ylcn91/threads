@@ -35,7 +35,6 @@ class AsyncTravelAgencyTest {
     void testPerformanceMetricsLogging() {
         AsyncTravelAgency.PerformanceMetrics metrics = AsyncTravelAgency.startPerformanceTracking();
         assertNotNull(metrics, "Performance metrics should not be null");
-        // Additional assertions can be made based on expected values of metrics
     }
 
     @Test
