@@ -1,0 +1,16 @@
+
+w
+java:S1192B"UDefine a constant instead of duplicating this literal "john.doe@example.com" 4 times.(ä†ê§üÿÿÿÿ8ÃÛËÈ1
+v
+java:S1192|"TDefine a constant instead of duplicating this literal "Fetched User ID: {}" 3 times.(íªæ›ûÿÿÿÿ8ÄÛËÈ1
+k
+java:S1192B"IDefine a constant instead of duplicating this literal "John Doe" 4 times.(ä†ê§üÿÿÿÿ8ÄÛËÈ1
+r
+java:S1192}"VDefine a constant instead of duplicating this literal "Fetched User Name: {}" 3 times.(úÛ£G8ÄÛËÈ1
+W
+java:S1118 ":Add a private constructor to hide the implicit public one.(™ã‹ô8ÊÛËÈ1
+X	java:S125U"<This block of commented-out lines of code should be removed.(ûÙ¹Õ8ÍÛËÈ1
+|
+java:S2142˜"^Either re-interrupt this method or rethrow the "InterruptedException" that can be caught here.(üŸ´Â8ÏÛËÈ1
+p
+java:S6204Ğ"RReplace this usage of 'Stream.collect(Collectors.toList())' with 'Stream.toList()'(ª™¨¹8À÷ÌÈ1

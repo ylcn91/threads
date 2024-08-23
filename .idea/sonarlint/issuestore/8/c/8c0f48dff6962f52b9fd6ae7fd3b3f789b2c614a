@@ -1,0 +1,8 @@
+
+o
+java:S6204"RReplace this usage of 'Stream.collect(Collectors.toList())' with 'Stream.toList()'(ª™¨¹8ó‰÷ŒÈ1
+L	java:S106 "+Replace this use of System.out by a logger.(²ŸÀÝþÿÿÿÿ8ô‰÷ŒÈ1
+O
+java:S1874'"-Remove this use of "getId"; it is deprecated.(ÚâÔ™úÿÿÿÿ8õ‰÷ŒÈ1
+J
+java:S1874,"-Remove this use of "getId"; it is deprecated.(âŽù×8ö‰÷ŒÈ1

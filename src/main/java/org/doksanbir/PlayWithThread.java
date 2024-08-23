@@ -21,16 +21,16 @@ public class PlayWithThread {
 
         //Instant start = Instant.now();
 
-
-//        for(int i = 0; i < 1_000_000; i++) {
-//            Json request = ContractService.buildContractRequest(id); // 10 ns
-//            String contractJson = ContractService.fetchContract(request); // 100 ms - 50 ms
-//            Contract contract = Json.unmarshal(contractJson); // 10 ns
-//            contracts.add(contract);
-//            log.info("Contract details: {},  {}", contract,i);
-//
-//        }
         long id = 12;
+        for(int i = 0; i < 1_000_000; i++) {
+            Json request = ContractService.buildContractRequest(id); // 10 ns
+            String contractJson = ContractService.fetchContract(request); // 100 ms - 50 ms
+            Contract contract = Json.unmarshal(contractJson); // 10 ns
+            contracts.add(contract);
+            log.info("Contract details: {},  {}", contract,i);
+
+        }
+
         Json request = ContractService.buildContractRequest(id); // 10 ns
         String contractJson = ContractService.fetchContract(request); // 100 ms - 50 ms
         Contract contract = Json.unmarshal(contractJson); // 10 ns
@@ -75,6 +75,7 @@ public class PlayWithThread {
         Contract contract3 = contract3Future.get();
         log.info("Contract details: {}", contract3);
 
+
         AtomicInteger count = new AtomicInteger();
 
         // Contract operations 1,000,000 times
@@ -114,6 +115,7 @@ class ContractService {
         return "{\"id\":12, \"contractType\":\"Service Agreement\", \"details\":\"This is a mock contract details.\"}";
     }
 }
+
 
 class Json {
     private final String jsonString;

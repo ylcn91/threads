@@ -138,7 +138,7 @@ public class VirtualThreadTravelAgency {
     }
 
     private void createAndStartVirtualThreads(ArrayList<Thread> threads, String destination) {
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 100; i++) {
             var days = new Random().nextInt(10) + 1;
             var people = new Random().nextInt(5) + 1;
             Thread thread = Thread.ofVirtual()
