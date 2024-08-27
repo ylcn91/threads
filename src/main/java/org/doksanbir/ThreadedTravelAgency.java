@@ -5,31 +5,33 @@ import lombok.extern.slf4j.Slf4j;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.util.Random;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
+import java.util.stream.IntStream;
 
 /**
- * This class simulates a multi-threaded travel agency that retrieves weather forecasts and calculates travel quotes for various destinations.
- * It displays a travel page with destinations, weather forecasts, and sample quotations for a random number of days and people.
+ * This class simulates a multi-threaded travel agency that retrieves weather forecasts
+ * and calculates travel quotes for various destinations concurrently.
+ * It displays a travel page with destinations, weather forecasts, and sample quotations
+ * for a random number of days and people.
  */
 @Slf4j
 public class ThreadedTravelAgency {
 
     private static final int DESTINATION_COUNT = 50;
     private static final double BASE_RATE = 100.0;
-    private static final String[] DESTINATIONS = new String[DESTINATION_COUNT];
+    private static final String[] DESTINATIONS = IntStream.range(0, DESTINATION_COUNT)
+            .mapToObj(i -> "Destination_" + (i + 1))
+            .toArray(String[]::new);
     private static final String[] WEATHER_CONDITIONS = {
             "Sunny", "Cloudy", "Rainy", "Stormy", "Snowy", "Windy", "Foggy", "Icy"
     };
-    private final ExecutorService executorService = Executors.newFixedThreadPool(10);
-    private final Random random = new Random();
 
-    static {
-        for (int i = 0; i < DESTINATION_COUNT; i++) {
-            DESTINATIONS[i] = "Destination_" + (i + 1);
-        }
+    private final ExecutorService executorService;
+    private final Random random;
+
+    public ThreadedTravelAgency() {
+        this.executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        this.random = new Random();
     }
 
     /**
@@ -38,20 +40,20 @@ public class ThreadedTravelAgency {
      * @param destination The name of the travel destination.
      * @param days        The desired number of days for the trip.
      * @param people      The number of people traveling.
-     * @return A Future object containing the calculated quote upon completion.
+     * @return A CompletableFuture object containing the calculated quote upon completion.
      */
-    public Future<Double> getQuotationAsync(String destination, int days, int people) {
-        return executorService.submit(() -> getQuotation(destination, days, people));
+    public CompletableFuture<Double> getQuotationAsync(String destination, int days, int people) {
+        return CompletableFuture.supplyAsync(() -> getQuotation(destination, days, people), executorService);
     }
 
     /**
      * Submits a task to asynchronously retrieve the weather forecast for the specified destination.
      *
      * @param destination The name of the travel destination.
-     * @return A Future object containing the retrieved weather forecast upon completion.
+     * @return A CompletableFuture object containing the retrieved weather forecast upon completion.
      */
-    public Future<String> getWeatherForecastAsync(String destination) {
-        return executorService.submit(() -> getWeatherForecast(destination));
+    public CompletableFuture<String> getWeatherForecastAsync(String destination) {
+        return CompletableFuture.supplyAsync(() -> getWeatherForecast(destination), executorService);
     }
 
     /**
@@ -76,8 +78,7 @@ public class ThreadedTravelAgency {
      */
     public String getWeatherForecast(String destination) {
         simulateNetworkCall();
-        Random random = new Random(destination.hashCode());
-        return WEATHER_CONDITIONS[random.nextInt(WEATHER_CONDITIONS.length)];
+        return WEATHER_CONDITIONS[new Random(destination.hashCode()).nextInt(WEATHER_CONDITIONS.length)];
     }
 
     /**
@@ -85,7 +86,6 @@ public class ThreadedTravelAgency {
      */
     private void simulateNetworkCall() {
         try {
-            // Simulate network delay of 200 milliseconds
             Thread.sleep(200);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -98,38 +98,44 @@ public class ThreadedTravelAgency {
      *
      * @param destination The name of the travel destination.
      * @return A double representing the rate multiplier for the destination.
-     * <p>
+     *
      * Note: This method uses a combination of `hashCode` and the Fibonacci sequence to generate a seemingly random multiplier.
      * This is not a secure or robust method for generating random numbers and should be replaced with a proper cryptographic
      * random number generator for production use.
      */
     private double getDestinationRateMultiplier(String destination) {
-        // Ensure non-negative input for the Fibonacci calculation
-        return fib(Math.abs(destination.hashCode()) % 30);
+        return fib(Math.abs(destination.hashCode()) % 30) / 100.0;
     }
 
     /**
-     * Inefficient recursive Fibonacci method simulating a CPU-intensive task.
+     * Calculates the nth Fibonacci number using an iterative approach.
      *
      * @param n The index of the Fibonacci number to calculate.
      * @return The nth Fibonacci number.
      */
-    private double fib(int n) {
+    private int fib(int n) {
         if (n <= 1) return n;
-        return fib(n - 1) + fib(n - 2);
+        int a = 0, b = 1;
+        for (int i = 2; i <= n; i++) {
+            int temp = a + b;
+            a = b;
+            b = temp;
+        }
+        return b;
     }
 
     /**
      * Displays the Travel Agency page by fetching and displaying information for each destination concurrently.
-     * <p>
      * This method tracks performance metrics like execution time, memory usage, and garbage collection.
      */
     public void displayTravelPage() {
         PerformanceMetrics metrics = startPerformanceTracking();
 
-        for (var destination : DESTINATIONS) {
-            processDestination(destination);
+        CompletableFuture<?>[] futures = new CompletableFuture<?>[DESTINATIONS.length];
+        for (int i = 0; i < DESTINATIONS.length; i++) {
+            futures[i] = processDestination(DESTINATIONS[i]);
         }
+        CompletableFuture.allOf(futures).join();
 
         logPerformanceMetrics(metrics);
         executorService.shutdown();
@@ -141,19 +147,20 @@ public class ThreadedTravelAgency {
      * It then logs the retrieved information along with the chosen number of days and people for the trip.
      *
      * @param destination The name of the travel destination.
+     * @return A CompletableFuture that completes when all processing for the destination is finished.
      */
-    private void processDestination(String destination) {
-        int days = random.nextInt(10) + 1;  // Random number of days between 1 and 10
-        int people = random.nextInt(5) + 1;  // Random number of people between 1 and 5
-        try {
-            Future<String> weatherFuture = getWeatherForecastAsync(destination);
-            Future<Double> quotationFuture = getQuotationAsync(destination, days, people);
+    private CompletableFuture<Void> processDestination(String destination) {
+        int days = random.nextInt(10) + 1;
+        int people = random.nextInt(5) + 1;
 
-            logDestinationDetails(destination, weatherFuture.get(), quotationFuture.get(), days, people);
-        } catch (InterruptedException | ExecutionException e) {
-            log.error("Error in processing destination: {}", destination, e);
-            Thread.currentThread().interrupt();
-        }
+        return CompletableFuture.allOf(
+                getWeatherForecastAsync(destination)
+                        .thenCombine(getQuotationAsync(destination, days, people),
+                                (weather, quotation) -> {
+                                    logDestinationDetails(destination, weather, quotation, days, people);
+                                    return null;
+                                })
+        );
     }
 
     /**
@@ -168,21 +175,22 @@ public class ThreadedTravelAgency {
      * @param people      The chosen number of people traveling.
      */
     private void logDestinationDetails(String destination, String weather, double quotation, int days, int people) {
-        log.info("Destination: {}, Weather: {}, Quotation for {} days, {} people: ${}", destination, weather, days, people, quotation);
+        log.info("Destination: {}, Weather: {}, Quotation for {} days, {} people: ${}",
+                destination, weather, days, people, String.format("%.2f", quotation));
     }
 
     /**
      * Starts tracking performance metrics for the `displayTravelPage` method.
      * This method captures the starting time, memory usage, and total garbage collection duration before processing any destinations.
-     * It returns a `PerformanceMetrics` object that can be used later to calculate the total execution time, memory usage, and GC time.
      *
      * @return A `PerformanceMetrics` object containing the initial performance values.
      */
     private PerformanceMetrics startPerformanceTracking() {
-        long startTime = System.currentTimeMillis();
-        long startMemory = getUsedMemory();
-        long startGcDuration = getTotalGCDuration();
-        return new PerformanceMetrics(startTime, startMemory, startGcDuration);
+        return new PerformanceMetrics(
+                System.currentTimeMillis(),
+                getUsedMemory(),
+                getTotalGCDuration()
+        );
     }
 
     /**
@@ -200,8 +208,6 @@ public class ThreadedTravelAgency {
         int finalThreadCount = ManagementFactory.getThreadMXBean().getThreadCount();
 
         log.info("Execution time: {} ms", (endTime - metrics.startTime));
-        log.info("Used memory before: {} bytes", metrics.startMemory);
-        log.info("Used memory after: {} bytes", endMemory);
         log.info("Memory used by operation: {} bytes", (endMemory - metrics.startMemory));
         log.info("Total garbage collection time: {} ms", (endGcDuration - metrics.startGcDuration));
         log.info("Final thread count: {}", finalThreadCount);
@@ -220,7 +226,6 @@ public class ThreadedTravelAgency {
     /**
      * Calculates the total time spent by the garbage collector since the JVM started.
      * This method retrieves the collection time of all garbage collector MXBeans available in the JVM and sums them up.
-     * The result is returned in milliseconds.
      *
      * @return The total duration of garbage collection in milliseconds.
      */
@@ -231,31 +236,19 @@ public class ThreadedTravelAgency {
     }
 
     /**
-     * Class used to track performance metrics for an operation.
-     * This class stores the starting time, memory usage, and garbage collection duration at the beginning of an operation
+     * Record used to track performance metrics for an operation.
+     * This record stores the starting time, memory usage, and garbage collection duration at the beginning of an operation
      * and can be used to calculate the total execution time, memory usage, and GC time after the operation is complete.
      */
-    private static class PerformanceMetrics {
-        long startTime;
-        long startMemory;
-        long startGcDuration;
-
-        PerformanceMetrics(long startTime, long startMemory, long startGcDuration) {
-            this.startTime = startTime;
-            this.startMemory = startMemory;
-            this.startGcDuration = startGcDuration;
-        }
-    }
+    private record PerformanceMetrics(long startTime, long startMemory, long startGcDuration) {}
 
     /**
      * This is the entry point for the application.
      * It creates an instance of the `ThreadedTravelAgency` class and calls its `displayTravelPage` method to generate and display the travel page.
-     * It also measures and logs performance metrics like execution time, memory usage, and garbage collection during the travel page generation.
      *
      * @param args Command-line arguments (not used in this application).
      */
     public static void main(String[] args) {
-        ThreadedTravelAgency agency = new ThreadedTravelAgency();
-        agency.displayTravelPage();
+        new ThreadedTravelAgency().displayTravelPage();
     }
 }
